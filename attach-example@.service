@@ -1,0 +1,24 @@
+[Unit]
+Description=Attach eno2 to Named network namespace %i
+Requires=netns@%i.service
+After=netns@%i.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Environment File containing address and gateway definitions
+# EnvironmentFile=/etc/%j.conf
+
+# Associate the %j NIC with the network namespace
+ExecStart=/sbin/ip link set %j netns %i
+
+# Run iproute2 (inside the netns) to bring the NIC up
+ExecStart=/sbin/ip netns exec %i ip l set up dev %j
+
+# Run iproute2 (inside the netns) to add the address/gateway
+#ExecStart=/usr/sbin/ip netns exec %i ip a add $ADDRESS broadcast $BROADCAST dev %j
+#ExecStart=/usr/sbin/ip netns exec %i ip r add default via $GATEWAY dev %j
+
+# Run iproute2 (inside the netns) to bring the NIC down (on stop)
+ExecStop=/sbin/ip netns exec %i ip l set down dev %j

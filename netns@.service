@@ -1,0 +1,22 @@
+[Unit]
+Description=Named network namespace %i
+StopWhenUnneeded=true
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Ask systemd to create a network namespace
+PrivateNetwork=yes
+
+# Ask ip netns to create a named network namespace
+# (This ensures that things like /var/run/netns are properly setup)
+ExecStart=/sbin/ip netns add %i
+
+# Drop the network namespace that ip netns just created
+ExecStart=/bin/umount /var/run/netns/%i
+
+# Re-use the same name for the network namespace that systemd put us in
+ExecStart=/bin/mount --bind /proc/self/ns/net /var/run/netns/%i
+
+# Clean up the name when we are done with the network namespace
+ExecStop=/sbin/ip netns delete %i
